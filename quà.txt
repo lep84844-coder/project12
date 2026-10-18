@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do You Love Me? - Visual Effects Edition 💖</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #05010a;
+            color: #fff;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(18, 5, 25, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 0, 128, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(255, 0, 100, 0.3);
+        }
+
+        /* Neon Text Glow */
+        .neon-text {
+            text-shadow: 0 0 10px var(--neon-color, #ff0077), 
+                         0 0 20px var(--neon-color, #ff0077), 
+                         0 0 30px var(--neon-color, #ff0077), 
+                         0 0 50px var(--neon-color, #ff0077);
+        }
+
+        /* Heart Pulse Animation */
+        @keyframes heartPulse {
+            0% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 15px var(--neon-color, #ff0055));
+            }
+            50% {
+                transform: scale(1.22);
+                filter: drop-shadow(0 0 45px var(--neon-color, #ff0077));
+            }
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 15px var(--neon-color, #ff0055));
+            }
+        }
+
+        .pulse-heart {
+            animation: heartPulse 1.2s infinite ease-in-out;
+        }
+
+        /* Dodging button smooth animation */
+        #noBtn {
+            transition: all 0.15s ease-out;
+        }
+
+        /* Custom Scrollbar for Settings Panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 0, 128, 0.5);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center relative overflow-hidden">
+
+    <!-- CUSTOM DYNAMIC BACKGROUND LAYER -->
+    <div id="customBg" class="absolute inset-0 bg-cover bg-center transition-all duration-500 z-0" style="background-image: none;"></div>
+
+    <!-- OVERLAY MASK FOR BLUR & DARKNESS CONTROL -->
+    <div id="bgOverlay" class="absolute inset-0 z-0 bg-black/60 transition-all duration-300"></div>
+
+    <!-- CANVAS FOR VISUAL EFFECTS (MATRIX / FIREWORKS / SNOW / RAIN) -->
+    <canvas id="fxCanvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none"></canvas>
+
+    <!-- SETTINGS / EFFECT PANEL TOGGLE BUTTON -->
+    <button onclick="toggleSettingsPanel()" class="fixed top-4 right-4 z-50 w-12 h-12 bg-pink-600/80 hover:bg-pink-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-pink-500/40 backdrop-blur-md transition-all duration-300 transform hover:rotate-90">
+        <i class="fa-solid fa-sliders text-xl"></i>
+    </button>
+
+    <!-- SETTINGS & EFFECT CONTROL PANEL -->
+    <div id="settingsPanel" class="fixed top-0 right-0 h-full w-80 sm:w-96 glass-panel z-50 transform translate-x-full transition-transform duration-300 ease-in-out p-5 flex flex-col justify-between overflow-y-auto">
+        <div>
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-pink-500/30 pb-3 mb-4">
+                <h2 class="text-xl font-bold text-pink-400 flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Tùy Chỉnh Hiệu Ứng
+                </h2>
+                <button onclick="toggleSettingsPanel()" class="text-gray-400 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Custom Question Input -->
+            <div class="mb-5">
+                <label class="block text-xs font-semibold text-pink-300 mb-1">Nội dung câu hỏi:</label>
+                <input type="text" id="questionInput" value="Do You Love Me?" oninput="updateQuestionText()" class="w-full bg-black/50 border border-pink-500/40 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-pink-400">
+            </div>
+
+            <!-- Background Image Settings -->
+            <div class="mb-5 border-t border-pink-500/20 pt-4">
+                <h3 class="text-sm font-bold text-pink-300 mb-2 flex items-center gap-1.5">
+                    <i class="fa-solid fa-image"></i> Hình Nền (Background)
+                </h3>
+                
+                <!-- File Upload -->
+                <label class="block w-full cursor-pointer bg-pink-600/30 hover:bg-pink-600/50 border border-dashed border-pink-400 rounded-lg p-3 text-center transition-all mb-3">
+                    <i class="fa-solid fa-cloud-arrow-up text-pink-300 text-lg mb-1 block"></i>
+                    <span class="text-xs text-pink-200">Tải ảnh từ máy/điện thoại</span>
+                    <input type="file" id="bgFileInput" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+                </label>
+
+                <!-- URL Input -->
+                <div class="space-y-2">
+                    <label class="block text-xs text-pink-200">Hoặc dán URL ảnh (Google Drive/Imgur/...):</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="bgUrlInput" placeholder="https://..." class="w-full bg-black/50 border border-pink-500/40 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+                        <button onclick="applyBgUrl()" class="px-3 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-bold">Áp dụng</button>
+                    </div>
+                    <p class="text-[10px] text-gray-400">* Hỗ trợ tự đổi link xem Google Drive thành link ảnh trực tiếp.</p>
+                </div>
+            </div>
+
+            <!-- Visual Effect Mode Selector -->
+            <div class="mb-5 border-t border-pink-500/20 pt-4">
+                <h3 class="text-sm font-bold text-pink-300 mb-2 flex items-center gap-1.5">
+                    <i class="fa-solid fa-sparkles"></i> Hiệu Ứng Hình Ảnh
+                </h3>
+                <select id="fxModeSelect" onchange="changeFxMode()" class="w-full bg-black/70 border border-pink-500/50 rounded-lg px-3 py-2 text-sm text-pink-200 focus:outline-none">
+                    <option value="matrix">1. TikTok Love Matrix (Mặc định)</option>
+                    <option value="rain">2. Mưa Trái Tim (Heart Rain)</option>
+                    <option value="fireworks">3. Pháo Hoa Trái Tim (Heart Fireworks)</option>
+                    <option value="snow">4. Tuyết Trái Tim (Heart Snow)</option>
+                </select>
+            </div>
+
+            <!-- Color Palette -->
+            <div class="mb-5">
+                <label class="block text-xs font-semibold text-pink-300 mb-1.5">Màu sắc hiệu ứng:</label>
+                <div class="flex gap-2">
+                    <button onclick="setThemeColor('#ff0077')" class="w-7 h-7 rounded-full bg-[#ff0077] ring-2 ring-white/50"></button>
+                    <button onclick="setThemeColor('#00f0ff')" class="w-7 h-7 rounded-full bg-[#00f0ff] ring-2 ring-white/20"></button>
+                    <button onclick="setThemeColor('#ff2200')" class="w-7 h-7 rounded-full bg-[#ff2200] ring-2 ring-white/20"></button>
+                    <button onclick="setThemeColor('#a855f7')" class="w-7 h-7 rounded-full bg-[#a855f7] ring-2 ring-white/20"></button>
+                    <button onclick="setThemeColor('#eab308')" class="w-7 h-7 rounded-full bg-[#eab308] ring-2 ring-white/20"></button>
+                </div>
+            </div>
+
+            <!-- Sliders -->
+            <div class="space-y-4 border-t border-pink-500/20 pt-4">
+                <!-- Darkness Overlay Slider -->
+                <div>
+                    <div class="flex justify-between text-xs text-pink-200 mb-1">
+                        <span>Độ tối lớp phủ (Overlay)</span>
+                        <span id="darknessVal">60%</span>
+                    </div>
+                    <input type="range" id="darknessRange" min="0" max="100" value="60" oninput="updateDarkness(this.value)" class="w-full accent-pink-500 h-1.5 bg-gray-700 rounded-lg cursor-pointer">
+                </div>
+
+                <!-- Effect Speed Slider -->
+                <div>
+                    <div class="flex justify-between text-xs text-pink-200 mb-1">
+                        <span>Tốc độ hiệu ứng</span>
+                        <span id="speedVal">1.0x</span>
+                    </div>
+                    <input type="range" id="speedRange" min="0.2" max="3" step="0.1" value="1" oninput="updateFxSpeed(this.value)" class="w-full accent-pink-500 h-1.5 bg-gray-700 rounded-lg cursor-pointer">
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset BG Button -->
+        <div class="pt-4 border-t border-pink-500/20 mt-4">
+            <button onclick="resetBackground()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium transition-all">
+                Khôi phục nền mặc định
+            </button>
+        </div>
+    </div>
+
+
+    <!-- SCREEN 1: QUESTION SCREEN -->
+    <div id="screen1" class="z-20 flex flex-col items-center justify-center text-center p-6 w-full max-w-md mx-4 glass-panel rounded-3xl relative transition-opacity duration-500">
+        <div class="text-6xl mb-4 animate-bounce">💖</div>
+        <h1 id="questionText" class="text-3xl md:text-4xl font-bold mb-3 text-pink-400 drop-shadow-md neon-text">
+            Do You Love Me?
+        </h1>
+        <p class="text-pink-200/80 mb-8 text-sm md:text-base font-medium">
+            Trả lời thật lòng đi nhé, không thoát được đâu! 😉
+        </p>
+
+        <!-- Interactive Buttons -->
+        <div id="buttonArea" class="relative w-full h-28 flex justify-center items-center gap-6">
+            <!-- YES BUTTON -->
+            <button id="yesBtn" onclick="acceptLove()" class="px-8 py-3.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold text-lg rounded-full shadow-lg shadow-pink-500/50 transform hover:scale-110 active:scale-95 transition-all duration-200 flex items-center gap-2 z-20">
+                <span>CÓ! 💕</span>
+            </button>
+
+            <!-- NO BUTTON (DODGES TOUCH & CURSOR) -->
+            <button id="noBtn" onmouseenter="dodgeNoButton()" onclick="dodgeNoButton()" ontouchstart="dodgeNoButton(event)" class="px-8 py-3.5 bg-gray-800/80 hover:bg-gray-700 text-gray-300 font-bold text-lg rounded-full shadow-md z-10 border border-gray-600/50">
+                <span>Không 😜</span>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- SCREEN 2: LOVE REVEAL SCREEN (TikTok Style) -->
+    <div id="screen2" class="hidden z-20 flex flex-col items-center justify-center text-center p-4">
+        <!-- Big Neon Glowing Title -->
+        <h1 id="screen2Title" class="pixel-font text-4xl sm:text-6xl md:text-7xl text-pink-500 neon-text mb-8 tracking-wider uppercase animate-pulse">
+            fuck u 
+        </h1>
+
+        <!-- Center Glowing Heart -->
+        <div class="relative cursor-pointer group mb-8" onclick="triggerHeartBurst()">
+            <svg id="pulseSvg" class="w-40 h-40 sm:w-52 sm:h-52 text-pink-500 pulse-heart transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </div>
+
+        <p class="text-pink-200 font-bold text-lg sm:text-xl drop-shadow-md bg-black/60 px-6 py-2.5 rounded-full border border-pink-500/40 backdrop-blur-md">
+            oki
+        </p>
+
+        <!-- Restart Button -->
+        <button onclick="resetApp()" class="mt-8 px-6 py-2 bg-pink-500/20 hover:bg-pink-500/40 border border-pink-500/50 text-pink-200 rounded-full text-sm font-semibold transition-all flex items-center gap-2">
+            <i class="fa-solid fa-rotate-left"></i> Chơi lại
+        </button>
+    </div>
+
+
+    <script>
+        // State variables
+        let dodgeCount = 0;
+        let currentFxMode = 'matrix';
+        let effectSpeed = 1.0;
+        let themeColor = '#ff0077';
+
+        // --- DODGE LOGIC FOR "NO" BUTTON ---
+        const noBtn = document.getElementById('noBtn');
+
+        function dodgeNoButton(e) {
+            if (e) e.preventDefault();
+            dodgeCount++;
+
+            if (dodgeCount > 8) {
+                acceptLove();
+                return;
+            }
+
+            const padding = 60;
+            const maxX = window.innerWidth - noBtn.offsetWidth - padding;
+            const maxY = window.innerHeight - noBtn.offsetHeight - padding;
+
+            const newX = Math.max(padding, Math.random() * maxX);
+            const newY = Math.max(padding, Math.random() * maxY);
+
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = `${newX}px`;
+            noBtn.style.top = `${newY}px`;
+
+            if (dodgeCount === 3) noBtn.innerText = "Chắc chưa? 😜";
+            if (dodgeCount === 5) noBtn.innerText = "Đố bắt được! 🚀";
+            if (dodgeCount === 7) noBtn.innerText = "Chọn CÓ đi! 🥺";
+        }
+
+        function acceptLove() {
+            document.getElementById('screen1').classList.add('hidden');
+            document.getElementById('screen2').classList.remove('hidden');
+            triggerHeartBurst();
+        }
+
+        function resetApp() {
+            dodgeCount = 0;
+            noBtn.style.position = 'relative';
+            noBtn.style.left = 'auto';
+            noBtn.style.top = 'auto';
+            noBtn.innerText = "Không 😜";
+
+            document.getElementById('screen2').classList.add('hidden');
+            document.getElementById('screen1').classList.remove('hidden');
+        }
+
+        // --- SETTINGS PANEL TOGGLE ---
+        function toggleSettingsPanel() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('translate-x-full');
+        }
+
+        function updateQuestionText() {
+            const val = document.getElementById('questionInput').value;
+            document.getElementById('questionText').innerText = val || "Do You Love Me?";
+        }
+
+        // --- BACKGROUND IMAGE HANDLERS ---
+        function setBgImage(url) {
+            const bgDiv = document.getElementById('customBg');
+            bgDiv.style.backgroundImage = `url('${url}')`;
+        }
+
+        function resetBackground() {
+            document.getElementById('customBg').style.backgroundImage = 'none';
+            document.getElementById('bgUrlInput').value = '';
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    setBgImage(evt.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function applyBgUrl() {
+            let url = document.getElementById('bgUrlInput').value.trim();
+            if (!url) return;
+
+            // Auto conversion for Google Drive view links
+            if (url.includes('drive.google.com')) {
+                const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    url = `https://lh3.googleusercontent.com/d/${match[1]}`;
+                }
+            }
+            setBgImage(url);
+        }
+
+        function updateDarkness(val) {
+            document.getElementById('darknessVal').innerText = val + '%';
+            document.getElementById('bgOverlay').style.backgroundColor = `rgba(0, 0, 0, ${val / 100})`;
+        }
+
+        function updateFxSpeed(val) {
+            effectSpeed = parseFloat(val);
+            document.getElementById('speedVal').innerText = effectSpeed.toFixed(1) + 'x';
+        }
+
+        function setThemeColor(hex) {
+            themeColor = hex;
+            document.documentElement.style.setProperty('--neon-color', hex);
+            document.getElementById('pulseSvg').style.color = hex;
+            document.getElementById('screen2Title').style.color = hex;
+        }
+
+        function changeFxMode() {
+            currentFxMode = document.getElementById('fxModeSelect').value;
+            initCanvasParticles();
+        }
+
+        // --- CANVAS DYNAMIC VISUAL EFFECTS ANIMATION SYSTEM ---
+        const canvas = document.getElementById('fxCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initCanvasParticles();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function initCanvasParticles() {
+            particles = [];
+            const count = currentFxMode === 'matrix' ? 40 : 60;
+
+            for (let i = 0; i < count; i++) {
+                particles.push(createParticle());
+            }
+        }
+
+        function createParticle(isBurst = false) {
+            return {
+                x: Math.random() * canvas.width,
+                y: isBurst ? canvas.height / 2 : Math.random() * canvas.height,
+                size: Math.random() * 18 + 12,
+                vx: (Math.random() - 0.5) * (isBurst ? 8 : 2),
+                vy: isBurst ? (Math.random() - 0.5) * 8 : (Math.random() * 1.5 + 0.5),
+                alpha: Math.random() * 0.8 + 0.2,
+                char: "LOVE YOU",
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.05
+            };
+        }
+
+        function triggerHeartBurst() {
+            for (let i = 0; i < 35; i++) {
+                particles.push(createParticle(true));
+            }
+        }
+
+        // Render Loop
+        function renderCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentFxMode === 'matrix') {
+                // TIKTOK MATRIX RUNNING TEXT
+                ctx.save();
+                ctx.font = '12px "Press Start 2P"';
+                ctx.fillStyle = themeColor;
+                ctx.globalAlpha = 0.25;
+                ctx.rotate(-0.2);
+
+                const text = "LOVE YOU LOVE YOU ";
+                const rows = Math.ceil(canvas.height / 24) + 10;
+                const cols = Math.ceil(canvas.width / 180) + 5;
+                
+                const time = Date.now() * 0.05 * effectSpeed;
+
+                for (let r = -5; r < rows; r++) {
+                    for (let c = -5; c < cols; c++) {
+                        const x = c * 180 + (r % 2 === 0 ? 30 : 0);
+                        const y = r * 28 + (time % 28);
+                        ctx.fillText(text, x - 100, y);
+                    }
+                }
+                ctx.restore();
+
+            } else if (currentFxMode === 'rain') {
+                // HEART RAIN
+                particles.forEach((p, idx) => {
+                    p.y += p.vy * effectSpeed * 2;
+                    if (p.y > canvas.height + 30) {
+                        particles[idx] = createParticle();
+                        particles[idx].y = -20;
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.font = `${p.size}px sans-serif`;
+                    ctx.fillStyle = themeColor;
+                    ctx.fillText('💖', p.x, p.y);
+                    ctx.restore();
+                });
+
+            } else if (currentFxMode === 'snow') {
+                // HEART SNOW
+                particles.forEach((p, idx) => {
+                    p.y += p.vy * effectSpeed;
+                    p.x += Math.sin(p.y * 0.02) * 1.5;
+                    p.rotation += p.rotSpeed;
+
+                    if (p.y > canvas.height + 30) {
+                        particles[idx] = createParticle();
+                        particles[idx].y = -20;
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation);
+                    ctx.font = `${p.size}px sans-serif`;
+                    ctx.fillText('❄️❤️', 0, 0);
+                    ctx.restore();
+                });
+
+            } else if (currentFxMode === 'fireworks') {
+                // FIREWORKS SPARKLES
+                particles.forEach((p, idx) => {
+                    p.x += p.vx * effectSpeed;
+                    p.y += p.vy * effectSpeed;
+                    p.alpha -= 0.008 * effectSpeed;
+
+                    if (p.alpha <= 0) {
+                        particles[idx] = createParticle(true);
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.font = `${p.size}px sans-serif`;
+                    ctx.fillText('✨💗', p.x, p.y);
+                    ctx.restore();
+                });
+            }
+
+            requestAnimationFrame(renderCanvas);
+        }
+
+        // Initialize on Load
+        window.onload = function() {
+            resizeCanvas();
+            renderCanvas();
+        };
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open My Letter 💌</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle, #41132f, #100817);
+  color: white;
+}
+
+h1 {
+  font-size: clamp(25px, 6vw, 40px);
+  text-shadow: 0 0 20px #ff3caa;
+}
+
+.container {
+  width: 100%;
+  text-align: center;
+  padding: 20px;
+}
+
+.envelope {
+  position: relative;
+  width: min(300px, 80vw);
+  height: 190px;
+  margin: 100px auto 45px;
+  background: #e879b0;
+  border-radius: 8px;
+  perspective: 900px;
+  cursor: pointer;
+  filter: drop-shadow(0 15px 25px #0008);
+}
+
+.back {
+  position: absolute;
+  inset: 0;
+  background: #d85c98;
+  border-radius: 8px;
+}
+
+.letter {
+  position: absolute;
+  z-index: 2;
+  left: 5%;
+  top: 10%;
+  width: 90%;
+  height: 85%;
+  padding: 20px 12px;
+  background: #fff8ed;
+  color: #8c3563;
+  border-radius: 5px;
+  transform: translateY(0);
+  transition: transform 1s, height 1s;
+  overflow: auto;
+}
+
+.letter h2 {
+  font-family: Georgia, serif;
+  margin-top: 0;
+}
+
+.letter textarea {
+  width: 100%;
+  height: 100px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: #63304c;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.front {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: #e879b0;
+  clip-path: polygon(0 0, 50% 55%, 100% 0,
+                     100% 100%, 0 100%);
+  border-radius: 8px;
+}
+
+.flap {
+  position: absolute;
+  z-index: 5;
+  inset: 0 0 auto;
+  height: 60%;
+  background: #ffafd4;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top;
+  transition: transform 0.8s;
+}
+
+.heart {
+  position: absolute;
+  z-index: 6;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 35px;
+  transition: opacity .3s;
+}
+
+.envelope.open .flap {
+  transform: rotateX(180deg);
+}
+
+.envelope.open .heart {
+  opacity: 0;
+}
+
+.envelope.open .letter {
+  transform: translateY(-140px);
+  height: 230px;
+  z-index: 3;
+}
+
+button {
+  border: none;
+  border-radius: 30px;
+  padding: 12px 20px;
+  margin: 5px;
+  background: linear-gradient(45deg, #ff3c9e, #a92bff);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 15px #ff3c9e66;
+}
+
+button:hover {
+  filter: brightness(1.15);
+}
+
+#hearts {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.floating-heart {
+  position: absolute;
+  bottom: -40px;
+  animation: fly 4s linear forwards;
+  filter: drop-shadow(0 0 8px #ff55bb);
+}
+
+@keyframes fly {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(.7);
+    opacity: 0;
+  }
+  15% { opacity: 1; }
+  100% {
+    transform: translateY(-110vh) rotate(360deg) scale(1.4);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .envelope {
+    height: 165px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div id="hearts"></div>
+
+<div class="container">
+  <p>✨ A LITTLE SURPRISE FOR YOU ✨</p>
+  <h1>Gửi bạn một lá thư 💌</h1>
+  <p>Nhấn vào phong bì để mở nhé!</p>
+
+  <div class="envelope" id="envelope">
+    <div class="back"></div>
+
+    <div class="letter">
+      <h2>Gửi người thương 💗</h2>
+      <textarea id="message"
+        placeholder="Viết lời nhắn của bạn ở đây..."></textarea>
+    </div>
+
+    <div class="front"></div>
+    <div class="flap"></div>
+    <div class="heart">❤️</div>
+  </div>
+
+  <button id="openBtn">💌 Mở thư</button>
+  <button id="closeBtn">↩ Đóng thư</button>
+</div>
+
+<script>
+const envelope = document.getElementById("envelope");
+const openBtn = document.getElementById("openBtn");
+const closeBtn = document.getElementById("closeBtn");
+const hearts = document.getElementById("hearts");
+
+let isOpen = false;
+
+function openLetter() {
+  if (isOpen) return;
+
+  isOpen = true;
+  envelope.classList.add("open");
+  openBtn.textContent = "💖 Đã mở thư";
+
+  createHearts(25);
+}
+
+function closeLetter() {
+  isOpen = false;
+  envelope.classList.remove("open");
+  openBtn.textContent = "💌 Mở thư";
+}
+
+function createHearts(amount) {
+  for (let i = 0; i < amount; i++) {
+    const heart = document.createElement("span");
+
+    heart.className = "floating-heart";
+    heart.textContent = ["💗", "💖", "💕", "✨"][
+      Math.floor(Math.random() * 4)
+    ];
+
+    heart.style.left = Math.random() * 100 + "vw";
+    heart.style.fontSize = 15 + Math.random() * 25 + "px";
+    heart.style.animationDuration = 3 + Math.random() * 3 + "s";
+
+    hearts.appendChild(heart);
+
+    heart.addEventListener("animationend", () => {
+      heart.remove();
+    });
+  }
+}
+
+envelope.addEventListener("click", openLetter);
+openBtn.addEventListener("click", openLetter);
+closeBtn.addEventListener("click", closeLetter);
+
+// Tạo trái tim bay liên tục
+setInterval(() => {
+  if (isOpen) createHearts(2);
+}, 1000);
+</script>
+</body>
+</html>
